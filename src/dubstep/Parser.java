@@ -17,8 +17,10 @@ public class Parser {
         int i;
         File dataDir = null;
         ArrayList<File> sqlFiles = new ArrayList<File>();
+        ArrayList<File> datFiles = new ArrayList<File>();
         HashMap<String,CreateTable> tables = new HashMap<String,CreateTable>();
-        
+        sqlFiles.add(new File("src/nba01.sql"));
+        datFiles.add(new File("src/PLAYERS.dat"));
         for(i = 0;i < args.length;i++){
             //if(args[i].equals()){
             //}
@@ -47,6 +49,25 @@ public class Parser {
                     }
                     else if(stmt instanceof Select){
                         SelectBody select = ((Select)stmt).getSelectBody();
+                        PlainSelect s = ((PlainSelect)select);
+                        String parsedLine = null;
+                        String delim = "[|]+";
+                        if(s.getFromItem()!= null){
+                        	
+                        	FileReader fileReader = new FileReader("src/"+s.getFromItem().toString().toUpperCase()+".dat");
+                            try{
+                                BufferedReader data = new BufferedReader(fileReader);
+                                while ((parsedLine = data.readLine()) != null){
+                                    System.out.println(parsedLine);
+                                    String[] tokens = parsedLine.split(delim);
+                                    for(String column : tokens){
+                                        System.out.println(column);
+                                    }
+                                }
+                            }
+                            finally{}
+                            
+                        }
                         
                         //DO SOMETHING
                     }
