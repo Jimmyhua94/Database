@@ -49,6 +49,22 @@ public class Parser {
                         SelectBody select = ((Select)stmt).getSelectBody();
                         
                         //DO SOMETHING
+                        
+                        String parsedLine = null;
+                        String delim = "[|]+";
+                        try{
+                            BufferedReader data = new BufferedReader(fileName);
+                            while ((parsedLine = data.readLine()) != null){
+                                System.out.println(parsedLine);
+                                Strings[] tokens = parsedLine.split(delim);
+                                for(Strings column : tokens){
+                                    System.out.println(column);
+                                }
+                            }
+                        }
+                        catch(Exception e){
+                            e.printStackTrace();
+                        }
                     }
                     else{
                         System.out.println("PANIC!!!" + stmt);
