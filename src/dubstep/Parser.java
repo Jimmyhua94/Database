@@ -14,14 +14,12 @@ public class Parser {
         
         System.out.println("File compiled!");
         
-        int i;
         File dataDir = null;
         ArrayList<File> sqlFiles = new ArrayList<File>();
         HashMap<String,CreateTable> tables = new HashMap<String,CreateTable>();
+        HashMap<String,HashMap<String,Integer>> schemas = new HashMap<String,HashMap<String,Integer>>();
         
-        for(i = 0;i < args.length;i++){
-            //if(args[i].equals()){
-            //}
+        for(int i = 0;i < args.length;i++){
             sqlFiles.add(new File(args[i]));
         }
         
@@ -36,19 +34,42 @@ public class Parser {
                     if(stmt instanceof CreateTable){
                         CreateTable ct = (CreateTable)stmt;
                         tables.put(ct.getTable().getName(),ct);
-                        
+
+                        HashMap<String,Integer> schema = new HashMap<String,Integer>();
+                        schemas.put(ct.getTable().getName(),schema);
+
                         List<ColumnDefinition> columnDef = ct.getColumnDefinitions();
-                        //*This is just for debugging and testing
-                        System.out.println("Columns: " + columnDef);
+
+                        int i = 0;
                         for(ColumnDefinition col : columnDef){
-                            System.out.println("Column: "+col.getColumnName());
+                            schema.put(col.getColumnName(),i++);
                         }
-                        //*
                     }
                     else if(stmt instanceof Select){
                         SelectBody select = ((Select)stmt).getSelectBody();
+                        PlainSelect s = ((PlainSelect)select);
                         
-                        //DO SOMETHING
+                        if(s.getFromItem()!= null){
+                            try{
+                                String parsedLine = null;
+                                String delim = "[|]+";
+                                //Will replace with non static file path.
+                                FileReader fileReader = new FileReader("sql/"+s.getFromItem().toString().toUpperCase()+".dat");
+                                BufferedReader data = new BufferedReader(fileReader);
+                                while ((parsedLine = data.readLine()) != null){
+                                    String[] tokens = parsedLine.split(delim);
+                                    //*Used for debugging
+                                    System.out.println(parsedLine);
+                                    for(String column : tokens){
+                                        System.out.println(column);
+                                    }
+                                    //*
+                                }
+                            }
+                            catch(IOException e){
+                                e.printStackTrace();
+                            }
+                        }
                     }
                     else{
                         System.out.println("PANIC!!!" + stmt);
