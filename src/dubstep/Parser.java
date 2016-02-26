@@ -7,11 +7,6 @@ import net.sf.jsqlparser.parser.*;
 import net.sf.jsqlparser.statement.*;
 import net.sf.jsqlparser.statement.create.table.*;
 import net.sf.jsqlparser.statement.select.*;
-import net.sf.jsqlparser.eval.*;
-import net.sf.jsqlparser.expression.operators.relational.*;
-import net.sf.jsqlparser.schema.*;
-import net.sf.jsqlparser.expression.*;
-import java.sql.SQLException;
 
 public class Parser {
     
@@ -56,20 +51,11 @@ public class Parser {
                             
                             Operator oper = fromScan.source;
                             
+                            if(pSelect.getWhere() != null){
+                                oper = new SelectionOperator(oper, fromScan.schemaCol, pSelect.getWhere());
+                            }
+                            
                             dump(oper);
-                            oper.reset();
-                            GreaterThan cmp = new GreaterThan();
-                            cmp.setLeftExpression(new Column(null, "A"));
-                            
-                            cmp.setRightExpression(new Column(null, "B"));
-                            
-                            Evalator test = new Evalator(fromScan.schemaCol,oper.getNext());
-                            try{
-                                System.out.println(test.eval(cmp));
-                            }
-                            catch(SQLException e){
-                                e.printStackTrace();
-                            }
                         }
                     }
                     else{
