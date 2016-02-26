@@ -7,26 +7,35 @@ import net.sf.jsqlparser.parser.*;
 import net.sf.jsqlparser.statement.*;
 import net.sf.jsqlparser.statement.create.table.*;
 import net.sf.jsqlparser.statement.select.*;
+import net.sf.jsqlparser.eval.*;
+import net.sf.jsqlparser.expression.operators.relational.*;
+import net.sf.jsqlparser.schema.*;
+import net.sf.jsqlparser.expression.*;
+import java.sql.SQLException;
 
 public class Parser {
     
     public static void main(String[] args){
-        
+
         System.out.println("File compiled!");
-        
+
         File dataDir = null;
         ArrayList<File> sqlFiles = new ArrayList<File>();
         HashMap<String,CreateTable> tables = new HashMap<String,CreateTable>();
-        HashMap<String,HashMap<String,Integer>> schemas = new HashMap<String,HashMap<String,Integer>>();
-        
+
         for(int i = 0;i < args.length;i++){
-            sqlFiles.add(new File(args[i]));
+            if(args[i].equals("--data")){
+                dataDir = new File(args[++i]);
+            }
+            else {
+                sqlFiles.add(new File(args[i]));
+            }
         }
-        
+
         for(File sql : sqlFiles){
             try{
                 FileReader stream = new FileReader(sql);
-                
+
                 CCJSqlParser parser = new CCJSqlParser(stream);
                 Statement stmt;
                 
@@ -34,39 +43,31 @@ public class Parser {
                     if(stmt instanceof CreateTable){
                         CreateTable ct = (CreateTable)stmt;
                         tables.put(ct.getTable().getName(),ct);
-
-                        HashMap<String,Integer> schema = new HashMap<String,Integer>();
-                        schemas.put(ct.getTable().getName(),schema);
-
-                        List<ColumnDefinition> columnDef = ct.getColumnDefinitions();
-
-                        int i = 0;
-                        for(ColumnDefinition col : columnDef){
-                            schema.put(col.getColumnName(),i++);
-                        }
                     }
                     else if(stmt instanceof Select){
                         SelectBody select = ((Select)stmt).getSelectBody();
-                        PlainSelect s = ((PlainSelect)select);
                         
-                        if(s.getFromItem()!= null){
+                        if (select instanceof PlainSelect){
+                            PlainSelect pSelect = ((PlainSelect)select);
+                            
+                            FromScanner fromScan = new FromScanner(dataDir, tables);
+                            
+                            pSelect.getFromItem().accept(fromScan);
+                            
+                            Operator oper = fromScan.source;
+                            
+                            dump(oper);
+                            oper.reset();
+                            GreaterThan cmp = new GreaterThan();
+                            cmp.setLeftExpression(new Column(null, "A"));
+                            
+                            cmp.setRightExpression(new Column(null, "B"));
+                            
+                            Evalator test = new Evalator(fromScan.schemaCol,oper.getNext());
                             try{
-                                String parsedLine = null;
-                                String delim = "[|]+";
-                                //Will replace with non static file path.
-                                FileReader fileReader = new FileReader("sql/"+s.getFromItem().toString().toUpperCase()+".dat");
-                                BufferedReader data = new BufferedReader(fileReader);
-                                while ((parsedLine = data.readLine()) != null){
-                                    String[] tokens = parsedLine.split(delim);
-                                    //*Used for debugging
-                                    System.out.println(parsedLine);
-                                    for(String column : tokens){
-                                        System.out.println(column);
-                                    }
-                                    //*
-                                }
+                                System.out.println(test.eval(cmp));
                             }
-                            catch(IOException e){
+                            catch(SQLException e){
                                 e.printStackTrace();
                             }
                         }
@@ -82,6 +83,18 @@ public class Parser {
             catch(ParseException e){
                 e.printStackTrace();
             }
+        }
+    }
+    
+    public static void dump(Operator input){
+        Datum[] row = input.getNext();
+        while(row != null){
+            for(Datum col : row){
+                System.out.print(col + "|");
+            }
+            System.out.println("");
+            
+            row = input.getNext();
         }
     }
 }
