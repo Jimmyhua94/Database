@@ -54,7 +54,9 @@ public class Parser {
                             if(pSelect.getWhere() != null){
                                 oper = new SelectionOperator(oper, fromScan.schemaCol, pSelect.getWhere());
                             }
-                            
+                            if(pSelect.getSelectItems() != null){
+                                oper = new ProjectOperator(oper, fromScan.schemaCol, pSelect.getSelectItems());
+                            }
                             dump(oper);
                         }
                     }
