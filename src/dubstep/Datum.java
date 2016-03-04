@@ -112,5 +112,4 @@ public interface Datum<T>{
             return data.toRawString();
         }
     }
-    
 }

@@ -1,0 +1,64 @@
+<project name="CSE 462" default="compile">
+  
+    <property name="src" location="."/>
+    <property name="build" location="build/"/>
+    <property name="dist" location="dist/"/>
+    <property name="lib" location="lib/"/>
+
+    <path id="lib.classpath">
+        <fileset dir="${lib}">
+            <include name="*.jar" />
+        </fileset>
+    </path>
+
+    <target name="init">
+        <mkdir dir="${build}"/>
+        <mkdir dir="${dist}"/>
+    </target>
+
+    <target name="compile" depends="init">
+        <javac srcdir="${src}" 
+               destdir="${build}" 
+               includeantruntime="true"
+               deprecation="yes"
+               classpath="${toString:lib.classpath}"
+               debug="on">
+            <compilerarg value="-Xlint:unchecked" />
+        </javac>
+    </target>
+
+    <target name="jar" depends="compile">
+        <jar destfile="${dist}/genesis.jar"
+             basedir="${build}" />
+    </target>
+
+    <target name="run_nba" depends="jar">
+        <java classname="dubstep.Parser" fork="true">
+            <classpath>
+                <pathelement location="${dist}/genesis.jar" />
+                <pathelement path="${toString:lib.classpath}" />
+            </classpath>
+            <arg value="--data"/>
+            <arg value="sql/NBA_Examples/" />
+            <arg value="sql/NBA_Examples/nba01.sql" />
+        </java>
+    </target>
+  
+    <target name="run" depends="jar">
+        <java classname="dubstep.Parser" fork="true">
+            <classpath>
+                <pathelement location="${dist}/genesis.jar" />
+                <pathelement path="${toString:lib.classpath}" />
+            </classpath>
+            <arg value="--data"/>
+            <arg value="sql/Sanity_Check_Examples/data/" />
+            <arg value="sql/Sanity_Check_Examples/TABLE01.SQL" />
+        </java>
+    </target>
+  
+    <target name="clean">
+        <delete dir="${build}"/>
+        <delete dir="${dist}"/>
+    </target>
+
+</project>
