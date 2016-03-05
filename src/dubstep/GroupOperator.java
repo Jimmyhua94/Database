@@ -3,6 +3,7 @@ package dubstep;
 import java.io.*;
 import java.util.*;
 
+import net.sf.jsqlparser.schema.*;
 import net.sf.jsqlparser.expression.*;
 import java.sql.SQLException;
 
@@ -17,37 +18,37 @@ public class GroupOperator implements Operator{
         this.input = input;
         this.schema = schema;
         this.condition = condition;
+        groups = new HashMap<String,Datum[]>();
     }
     String hashFunction(String hash1,String hash2){
         return hash1+hash2;
     }
-    Datum[] getNext(){
+    public Datum[] getNext(){
         Datum[] tuple = null;
         do{
             tuple = input.getNext();
             if (tuple != null){
+                int i = 0;
                 Evalator eval = new Evalator(schema, tuple);
-                try{
-                    String hash = eval.eval(condition.get(i)).getData().toString();
-                    String val2 = "";
-                    for(int i = 1;i < condition.size();i++){
-                        val2 = eval.eval(condition.get(i)).getData().toString();
-                        hash = hashFunction(hash, val2);
-                    }
-                    groups.put(hash,tuple);
+                String hash = eval.eval(condition.get(i)).toString();
+                String val2 = "";
+                for(;i < condition.size();i++){
+                    val2 = eval.eval(condition.get(i)).toString();
+                    hash = hashFunction(hash, val2);
                 }
-                catch(SQLException e){
-                    e.printStackTrace();
-                }
+                groups.put(hash,tuple);
             }
         }while(tuple != null);
         Iterator it = groups.entrySet().iterator();
-        if (it.hashNext()){
-            return it.next().getValue();
+        if (it.hasNext()){
+            HashMap.Entry tup = (HashMap.Entry)it.next();
+            it.remove();
+            return (Datum[])tup.getValue();
         }
         return null;
     }
-    void reset(){
+    
+    public void reset(){
         input.reset();
     }
 }

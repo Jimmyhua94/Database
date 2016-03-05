@@ -8,11 +8,9 @@ import net.sf.jsqlparser.statement.*;
 import net.sf.jsqlparser.statement.create.table.*;
 import net.sf.jsqlparser.statement.select.*;
 
-public class Parser {
-    
-    public static void main(String[] args){
+public class Main{
 
-        System.out.println("File compiled!");
+    public static void main(String[] args){
 
         File dataDir = null;
         ArrayList<File> sqlFiles = new ArrayList<File>();
@@ -77,7 +75,7 @@ public class Parser {
             }
         }
     }
-    
+
     public static void dump(Operator input){
         Datum[] row = input.getNext();
         while(row != null){

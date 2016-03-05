@@ -33,7 +33,7 @@
     </target>
 
     <target name="run_nba" depends="jar">
-        <java classname="dubstep.Parser" fork="true">
+        <java classname="dubstep.main" fork="true">
             <classpath>
                 <pathelement location="${dist}/genesis.jar" />
                 <pathelement path="${toString:lib.classpath}" />
@@ -45,7 +45,7 @@
     </target>
   
     <target name="run" depends="jar">
-        <java classname="dubstep.Parser" fork="true">
+        <java classname="dubstep.Main" fork="true">
             <classpath>
                 <pathelement location="${dist}/genesis.jar" />
                 <pathelement path="${toString:lib.classpath}" />
