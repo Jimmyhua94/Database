@@ -53,11 +53,12 @@ public class Main{
                                 oper = new SelectionOperator(oper, fromScan.schemaCol, pSelect.getWhere());
                             }
                             if(pSelect.getGroupByColumnReferences() != null){
-                                oper = new GroupOperator(oper, fromScan.schemaCol, pSelect.getGroupByColumnReferences());
+                                if(pSelect.getHaving() != null)
+                                    oper = new GroupOperator(oper, fromScan.schemaCol,pSelect.getSelectItems(), pSelect.getGroupByColumnReferences(),pSelect.getHaving());
+                                else
+                                    oper = new GroupOperator(oper, fromScan.schemaCol,pSelect.getSelectItems(), pSelect.getGroupByColumnReferences());
                             }
-                            if(pSelect.getSelectItems() != null){
-                                oper = new ProjectOperator(oper, fromScan.schemaCol, pSelect.getSelectItems());
-                            }
+                            oper = new ProjectOperator(oper, fromScan.schemaCol, pSelect.getSelectItems());
                             
                             dump(oper);
                         }
@@ -79,11 +80,14 @@ public class Main{
     public static void dump(Operator input){
         Datum[] row = input.getNext();
         while(row != null){
-            for(Datum col : row){
-                System.out.print(col + "|");
+            for(int i = 0; i < row.length-1;i++){
+                System.out.print(row[i] + "|");
             }
-            System.out.println("");
-            
+            System.out.println(row[row.length-1]);
+            // for(Datum col : row){
+                // System.out.print(col + "|");
+            // }
+            // System.out.println("");
             row = input.getNext();
         }
     }

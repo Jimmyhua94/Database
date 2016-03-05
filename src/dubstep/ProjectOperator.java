@@ -12,6 +12,7 @@ import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.select.AllColumns;
 import net.sf.jsqlparser.statement.select.SelectExpressionItem;
 import net.sf.jsqlparser.statement.select.SelectItem;
+import net.sf.jsqlparser.JSQLParserException;
 
 public class ProjectOperator implements Operator{
 
@@ -35,7 +36,12 @@ public class ProjectOperator implements Operator{
             int i = 0;
             Datum[] project = new Datum[toProject.size()];
             for(SelectItem column: toProject){
-                project[i] = (tuple[schema.get(column.toString())]);
+                Expression func = ((SelectExpressionItem)column).getExpression();
+                if (func instanceof Function){
+                    System.err.println(((Function)func).getName());
+                }
+                else
+                    project[i] = tuple[schema.get(column.toString())];
                 i++;
             }
             return project;
