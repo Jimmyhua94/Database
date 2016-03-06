@@ -36,11 +36,6 @@ public class ProjectOperator implements Operator{
             int i = 0;
             Datum[] project = new Datum[toProject.size()];
             for(SelectItem column: toProject){
-                Expression func = ((SelectExpressionItem)column).getExpression();
-                if (func instanceof Function){
-                    System.err.println(((Function)func).getName());
-                }
-                else
                     project[i] = tuple[schema.get(column.toString())];
                 i++;
             }

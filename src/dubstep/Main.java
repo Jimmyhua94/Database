@@ -52,15 +52,18 @@ public class Main{
                             if(pSelect.getWhere() != null){
                                 oper = new SelectionOperator(oper, fromScan.schemaCol, pSelect.getWhere());
                             }
-                            if(pSelect.getGroupByColumnReferences() != null){
-                                if(pSelect.getHaving() != null)
-                                    oper = new GroupOperator(oper, fromScan.schemaCol,pSelect.getSelectItems(), pSelect.getGroupByColumnReferences(),pSelect.getHaving());
-                                else
-                                    oper = new GroupOperator(oper, fromScan.schemaCol,pSelect.getSelectItems(), pSelect.getGroupByColumnReferences());
-                            }
+                            if(pSelect.getHaving() != null)
+                                oper = new GroupOperator(oper, fromScan.schemaCol,pSelect.getSelectItems(), pSelect.getGroupByColumnReferences(),pSelect.getHaving());
+                            else if(pSelect.getGroupByColumnReferences() != null)
+                                oper = new GroupOperator(oper, fromScan.schemaCol,pSelect.getSelectItems(), pSelect.getGroupByColumnReferences());
+                            else
+                                oper = new GroupOperator(oper, fromScan.schemaCol,pSelect.getSelectItems());
                             oper = new ProjectOperator(oper, fromScan.schemaCol, pSelect.getSelectItems());
                             
                             dump(oper);
+                        }
+                        if (select instanceof Union){
+                            System.err.println("works");
                         }
                     }
                     else{
