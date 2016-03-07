@@ -24,8 +24,12 @@ public class SelectionOperator implements Operator{
         Datum[] tuple = null;
         do {
             tuple = input.getNext();
+            Iterator<String> it = schema.keySet().iterator();
+            String table = it.next();
             if (tuple != null){
-                String table = ((Column)((BinaryExpression)condition).getLeftExpression()).getTable().getName();
+                //System.err.println(((BinaryExpression)condition).getLeftExpression().getClass());
+                if(((BinaryExpression)condition).getLeftExpression() instanceof Column)
+                    table = ((Column)((BinaryExpression)condition).getLeftExpression()).getTable().getName();
                 Evalator eval = new Evalator(schema.get(table), tuple);
                 try{
                     if(!eval.eval(condition).toBool()){

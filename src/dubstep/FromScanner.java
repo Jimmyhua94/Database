@@ -40,10 +40,7 @@ public class FromScanner implements FromItemVisitor{
         
         HashMap<Integer,ColumnDefinition> schema = new HashMap<Integer,ColumnDefinition>();
 
-        if (tableName.getAlias() != null)
-            schemas.put(tableName,schema);
-        else
-            schemas.put(tableName,schema);
+        schemas.put(tableName,schema);
 
         List<ColumnDefinition> columnDef = table.getColumnDefinitions();
         HashMap<String,Integer> sCol = new HashMap<String,Integer>();
@@ -54,7 +51,11 @@ public class FromScanner implements FromItemVisitor{
             schema.put(i,col);
             i++;
         }
-        schemaCol.put(tableName.getAlias(),sCol);
+        if (tableName.getAlias() != null)
+            schemaCol.put(tableName.getAlias(),sCol);
+        else
+            schemaCol.put(tableName.getName(),sCol);
+        
         
         if (source == null)
             source = new ScanOperator(new File(basePath, tableName.getName() + ".dat"),schemas.get(tableName));

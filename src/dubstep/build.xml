@@ -40,7 +40,7 @@
             </classpath>
             <arg value="--data"/>
             <arg value="sql/NBA_Examples/" />
-            <arg value="sql/NBA_Examples/nba04.sql" />
+            <arg value="sql/NBA_Examples/nba03.sql" />
         </java>
     </target>
   

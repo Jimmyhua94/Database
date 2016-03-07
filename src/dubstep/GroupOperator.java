@@ -52,6 +52,10 @@ public class GroupOperator implements Operator{
     }
     public Datum[] getNext(){
         String table = ((Column)((SelectExpressionItem)toProject.get(0)).getExpression()).getTable().getName();
+        if (table == null){
+            Iterator<String> it = schema.keySet().iterator();
+            table = it.next();
+        }
         Datum[] tuple = null;
         do{
             tuple = input.getNext();
@@ -77,6 +81,8 @@ public class GroupOperator implements Operator{
                     else{
                         Expression func = ((SelectExpressionItem)column).getExpression();
                         if(func instanceof Column){
+                            // System.err.println(schema.get(table).get(((Column)((SelectExpressionItem)toProject.get(i)).getExpression()).getColumnName()));
+                            
                             project[i] = tuple[schema.get(table).get(((Column)((SelectExpressionItem)toProject.get(i)).getExpression()).getColumnName())];
                         }
                         else if (func instanceof Function){
