@@ -31,6 +31,8 @@ public class Main{
 
                 CCJSqlParser parser = new CCJSqlParser(stream);
                 Statement stmt;
+                FromScanner fromScan =  null;
+                Operator oper = null;
                 
                 while((stmt = parser.Statement()) != null){
                     if(stmt instanceof CreateTable){
@@ -43,7 +45,7 @@ public class Main{
                         if (select instanceof PlainSelect){
                             PlainSelect pSelect = ((PlainSelect)select);
                             
-                            FromScanner fromScan = new FromScanner(dataDir, tables);
+                            fromScan = new FromScanner(dataDir, tables);
                             
                             pSelect.getFromItem().accept(fromScan);
                             
@@ -51,7 +53,7 @@ public class Main{
                                 pSelect.getJoins().get(0).getRightItem().accept(fromScan);
                             //System.err.println(pSelect.getJoins());
                             
-                             Operator oper = fromScan.source;
+                            oper = fromScan.source;
 
                             if(pSelect.getWhere() != null){
                                 oper = new SelectionOperator(oper, fromScan.schemaCol, pSelect.getWhere());
@@ -66,9 +68,33 @@ public class Main{
                             
                             dump(oper);
                         }
-                        if (select instanceof Union){
-                            System.err.println("works");
-                        }
+						else if(select instanceof Union){
+							List<PlainSelect> unionItems = ((Union) select).getPlainSelects();
+							//UNION FROM
+							for(int temp = 0; temp<=unionItems.size()-1;temp++){
+								if(unionItems.get(temp).getFromItem()!= null){
+									fromScan = new FromScanner(dataDir, tables);
+									unionItems.get(temp).getFromItem().accept(fromScan);
+									oper = fromScan.source;
+								}
+								//UNION WHERE STATEMENT
+								if(unionItems.get(temp).getWhere()!= null){
+									oper = new SelectionOperator(oper, fromScan.schemaCol, unionItems.get(temp).getWhere());
+								}
+								if(unionItems.get(temp).getSelectItems()!= null){
+									ArrayList<SelectExpressionItem> items = new ArrayList<SelectExpressionItem>();
+									if(!(unionItems.get(temp).getSelectItems().get(0) instanceof AllColumns)){
+										for (int n=0; n<=unionItems.get(temp).getSelectItems().size()-1; n++){
+											items.add((SelectExpressionItem) unionItems.get(temp).getSelectItems().get(n));	
+										}
+                                        oper = new GroupOperator(oper, fromScan.schemaCol,unionItems.get(temp).getSelectItems());
+										//oper = new ProjectOperator(oper, fromScan.schemaCol, unionItems.get(temp).getSelectItems());
+									}
+									dump(oper);
+								}
+								System.out.println("***********************************************************");
+							}
+						}
                     }
                     else{
                         System.out.println("PANIC!!!" + stmt);

@@ -1,8 +1,8 @@
 CREATE TABLE R (A int, B int);
 CREATE TABLE S (A int, B int);
 
-
-
-SELECT R.A,R.B
-FROM R, S
-WHERE R.A = S.A
+SELECT A,B
+FROM R
+UNION 
+SELECT A, B
+FROM S
