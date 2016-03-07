@@ -1,4 +1,8 @@
 CREATE TABLE R (A int, B int);
+CREATE TABLE S (A int, B int);
 
-SELECT SUM(A+B)
-FROM R 
+
+
+SELECT R.A,R.B
+FROM R, S
+WHERE R.A = S.A

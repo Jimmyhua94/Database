@@ -2,11 +2,12 @@ package dubstep;
 
 import java.io.*;
 import java.util.*;
+import java.sql.SQLException;
+import java.util.Random;
 
 import net.sf.jsqlparser.schema.*;
 import net.sf.jsqlparser.expression.*;
 import net.sf.jsqlparser.statement.select.*;
-import java.sql.SQLException;
 
 public class GroupOperator implements Operator{
     
@@ -16,13 +17,16 @@ public class GroupOperator implements Operator{
     HashMap<String,Datum[]> groups;
     List<Column> condition;
     Expression having;
+    Random rand;
+    Iterator it;
     
-    //AGG
+    //AGG / PROJECT
     public GroupOperator(Operator input,HashMap<String, Integer> schema, List<SelectItem> toProject){
         this.input = input;
         this.schema = schema;
         this.toProject = toProject;
         groups = new HashMap<String,Datum[]>();
+        rand = new Random();
     }
     //GROUP BY
     public GroupOperator(Operator input,HashMap<String, Integer> schema, List<SelectItem> toProject, List<Column> condition){
@@ -31,6 +35,7 @@ public class GroupOperator implements Operator{
         this.toProject = toProject;
         this.condition = condition;
         groups = new HashMap<String,Datum[]>();
+        rand = new Random();
     }
     //HAVING
     public GroupOperator(Operator input,HashMap<String, Integer> schema, List<SelectItem> toProject, List<Column> condition, Expression having){
@@ -40,6 +45,7 @@ public class GroupOperator implements Operator{
         this.condition = condition;
         this.having = having;
         groups = new HashMap<String,Datum[]>();
+        rand = new Random();
     }
     String hashFunction(String hash1,String hash2){
         return hash1+"hash"+hash2;
@@ -49,8 +55,9 @@ public class GroupOperator implements Operator{
         do{
             tuple = input.getNext();
             if (tuple != null){
+                Datum[] project = new Datum[toProject.size()];
                 Evalator eval = new Evalator(schema, tuple);
-                String hash = "";
+                String hash = tuple[0].toString() + rand.nextInt((1000 - 0) + 1) + tuple[rand.nextInt((tuple.length - 0))].toString();
                 
                 if(condition != null){
                     int i = 0;
@@ -61,76 +68,78 @@ public class GroupOperator implements Operator{
                         hash = hashFunction(hash, val2);
                     }
                 }
-                
+                int i = 0;
                 for(SelectItem column: toProject){
-                    Expression func = ((SelectExpressionItem)column).getExpression();
-                    if (func instanceof Function){
-                        Datum[] aggTuple = new Datum[tuple.length+1];
-                        int j = 0;
-                        for(Datum data: tuple){
-                            aggTuple[j] = tuple[j];
-                            j++;
-                        }
-                        tuple = aggTuple;
-                        
-                        schema.put(func.toString(),schema.size()-1);
-                        tuple[tuple.length-1] = new Datum.Int("0");
-                        
-                        LongValue val = (LongValue)tuple[schema.get(((Function)func).toString())].getData();
-                        if(groups.containsKey(hash)){
-                            try{
-                            LongValue prevVal = (LongValue)(groups.get(hash))[schema.get(((Function)func).toString())].getData();
-                            LongValue colVal = (LongValue)eval.eval(((Function)func).getParameters().getExpressions().get(0));
-                            if(((Function)func).getName().equals("COUNT"))
-                                val.setValue(prevVal.getValue() + 1 );
-                            if(((Function)func).getName().equals("AVG"))
-                                val.setValue((prevVal.getValue()+colVal.getValue())/2);
-                            if(((Function)func).getName().equals("MAX")){
-                                if(prevVal.getValue() <= colVal.getValue())
-                                    val.setValue(colVal.getValue());
-                                else
-                                    val.setValue(prevVal.getValue());
-                            }
-                            if(((Function)func).getName().equals("MIN")){
-                                if(prevVal.getValue() >= colVal.getValue())
-                                    val.setValue(colVal.getValue());
-                                else
-                                    val.setValue(prevVal.getValue());
-                            }
-                            if(((Function)func).getName().equals("SUM"))
-                                val.setValue(prevVal.getValue()+colVal.getValue());
-                            }
-                            catch(SQLException e){
-                                e.printStackTrace();
-                            }
-                        }
-                        else{
-                            try{
-                                LongValue initVal = (LongValue)eval.eval(((Function)func).getParameters().getExpressions().get(0));
-                                //LongValue initVal = (LongValue)(tuple[schema.get(((Function)func).getParameters().getExpressions().get(0).toString())].getData());
-                                if(((Function)func).getName().equals("COUNT"))
-                                    val.setValue(1);
-                                if(((Function)func).getName().equals("AVG"))
-                                    val.setValue(initVal.getValue());
-                                if(((Function)func).getName().equals("MAX"))
-                                    val.setValue(initVal.getValue());
-                                if(((Function)func).getName().equals("MIN"))
-                                    val.setValue(initVal.getValue());
-                                if(((Function)func).getName().equals("SUM"))
-                                    val.setValue(initVal.getValue());
-                            }
-                            catch(SQLException e){
-                                e.printStackTrace();
-                            }
-                        }
-                        tuple[tuple.length-1] = new Datum.Int(val.toString());
+                    if (column instanceof AllColumns){
+                        project = tuple;
                     }
+                    else{
+                        Expression func = ((SelectExpressionItem)column).getExpression();
+                        if(func instanceof Column){
+                            project[i] = tuple[schema.get(column.toString())];
+                        }
+                        else if (func instanceof Function){
+                            if(condition == null)
+                                hash = "";
+                            schema.put(func.toString(),schema.size());
+                            project[i] = new Datum.Int("0");
+                            LongValue val = (LongValue)project[i].getData();
+                            if(groups.containsKey(hash)){
+                                try{
+                                LongValue prevVal = (LongValue)(groups.get(hash))[i].getData();
+                                LongValue colVal = (LongValue)eval.eval(((Function)func).getParameters().getExpressions().get(0));
+                                if(((Function)func).getName().equals("COUNT"))
+                                    val.setValue(prevVal.getValue() + 1 );
+                                if(((Function)func).getName().equals("AVG"))
+                                    val.setValue((prevVal.getValue()+colVal.getValue())/2);
+                                if(((Function)func).getName().equals("MAX")){
+                                    if(prevVal.getValue() <= colVal.getValue())
+                                        val.setValue(colVal.getValue());
+                                    else
+                                        val.setValue(prevVal.getValue());
+                                }
+                                if(((Function)func).getName().equals("MIN")){
+                                    if(prevVal.getValue() >= colVal.getValue())
+                                        val.setValue(colVal.getValue());
+                                    else
+                                        val.setValue(prevVal.getValue());
+                                }
+                                if(((Function)func).getName().equals("SUM"))
+                                    val.setValue(prevVal.getValue()+colVal.getValue());
+                                }
+                                catch(SQLException e){
+                                    e.printStackTrace();
+                                }
+                            }
+                            else{
+                                try{
+                                    LongValue initVal = (LongValue)eval.eval(((Function)func).getParameters().getExpressions().get(0));
+                                    //LongValue initVal = (LongValue)(tuple[schema.get(((Function)func).getParameters().getExpressions().get(0).toString())].getData());
+                                    if(((Function)func).getName().equals("COUNT"))
+                                        val.setValue(1);
+                                    if(((Function)func).getName().equals("AVG"))
+                                        val.setValue(initVal.getValue());
+                                    if(((Function)func).getName().equals("MAX"))
+                                        val.setValue(initVal.getValue());
+                                    if(((Function)func).getName().equals("MIN"))
+                                        val.setValue(initVal.getValue());
+                                    if(((Function)func).getName().equals("SUM"))
+                                        val.setValue(initVal.getValue());
+                                }
+                                catch(SQLException e){
+                                    e.printStackTrace();
+                                }
+                            }
+                            //project[i] = new Datum.Int(val.toString());
+                        }
+                    }
+                    i++;
                 }
                 
                 if(having != null){
                         try{
                             if(eval.eval(having).toBool()){
-                                groups.put(hash,tuple);
+                                groups.put(hash,project);
                             }
                         }
                         catch(SQLException e){
@@ -138,11 +147,12 @@ public class GroupOperator implements Operator{
                         }
                 }
                 else
-                    groups.put(hash,tuple);
+                    groups.put(hash,project);
             }
         }while(tuple != null);
 
-        Iterator it = groups.entrySet().iterator();
+        if(it == null)
+            it = groups.entrySet().iterator();
         if (it.hasNext()){
             HashMap.Entry tup = (HashMap.Entry)it.next();
             it.remove();
@@ -152,6 +162,7 @@ public class GroupOperator implements Operator{
     }
     
     public void reset(){
-        input.reset();
+        //input.reset();
+        it = groups.entrySet().iterator();
     }
 }

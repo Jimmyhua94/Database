@@ -24,6 +24,7 @@ public class ProjectOperator implements Operator{
         this.input = input;
         this.toProject = toProject;
         this.schema = schema;
+        System.err.println("PROJECT");
     }
 
     public Datum[] getNext() {
@@ -47,6 +48,6 @@ public class ProjectOperator implements Operator{
     }
 
     public void reset() {
-    input.reset();
+        input.reset();
     }
 }

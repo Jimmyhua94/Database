@@ -47,8 +47,12 @@ public class Main{
                             
                             pSelect.getFromItem().accept(fromScan);
                             
-                            Operator oper = fromScan.source;
+                            if(pSelect.getJoins() != null)
+                                pSelect.getJoins().get(0).getRightItem().accept(fromScan);
+                            //System.err.println(pSelect.getJoins());
                             
+                             Operator oper = fromScan.source;
+
                             if(pSelect.getWhere() != null){
                                 oper = new SelectionOperator(oper, fromScan.schemaCol, pSelect.getWhere());
                             }
@@ -58,7 +62,7 @@ public class Main{
                                 oper = new GroupOperator(oper, fromScan.schemaCol,pSelect.getSelectItems(), pSelect.getGroupByColumnReferences());
                             else
                                 oper = new GroupOperator(oper, fromScan.schemaCol,pSelect.getSelectItems());
-                            oper = new ProjectOperator(oper, fromScan.schemaCol, pSelect.getSelectItems());
+                            // oper = new ProjectOperator(oper, fromScan.schemaCol, pSelect.getSelectItems());
                             
                             dump(oper);
                         }

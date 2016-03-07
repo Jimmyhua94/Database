@@ -23,6 +23,7 @@ public class FromScanner implements FromItemVisitor{
         this.basePath = basePath;
         this.tables = tables;
         schemas = new HashMap<String,HashMap<Integer,ColumnDefinition>>();
+        schemaCol = new HashMap<String, Integer>();
     }
     
     public void visit(SubJoin subJoin){
@@ -36,7 +37,6 @@ public class FromScanner implements FromItemVisitor{
     public void visit(Table tableName){
         CreateTable table = tables.get(tableName.getName());
         HashMap<Integer,ColumnDefinition> schema = new HashMap<Integer,ColumnDefinition>();
-        schemaCol = new HashMap<String, Integer>();
         schemas.put(tableName.getName(),schema);
 
         List<ColumnDefinition> columnDef = table.getColumnDefinitions();
@@ -47,7 +47,11 @@ public class FromScanner implements FromItemVisitor{
             schema.put(i,col);
             i++;
         }
-        
-        source = new ScanOperator(new File(basePath, tableName.getName() + ".dat"),schemas.get(tableName.getName()));
+        if (source == null)
+            source = new ScanOperator(new File(basePath, tableName.getName() + ".dat"),schemas.get(tableName.getName()));
+        else{
+            Operator joinSource = new ScanOperator(new File(basePath, tableName.getName() + ".dat"),schemas.get(tableName.getName()));
+            source = new JoinOperator(source, joinSource);
+        }
     }
 }
