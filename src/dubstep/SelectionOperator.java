@@ -2,17 +2,19 @@ package dubstep;
 
 import java.io.*;
 import java.util.*;
-
-import net.sf.jsqlparser.expression.*;
 import java.sql.SQLException;
+
+
+import net.sf.jsqlparser.schema.*;
+import net.sf.jsqlparser.expression.*;
 
 public class SelectionOperator implements Operator{
     
     Operator input;
-    HashMap<String, Integer> schema;
+    HashMap<String,HashMap<String,Integer>> schema;
     Expression condition;
     
-    public SelectionOperator(Operator input, HashMap<String, Integer> schema, Expression condition){
+    public SelectionOperator(Operator input, HashMap<String,HashMap<String,Integer>> schema, Expression condition){
         this.input = input;
         this.schema = schema;
         this.condition = condition;
@@ -23,9 +25,11 @@ public class SelectionOperator implements Operator{
         do {
             tuple = input.getNext();
             if (tuple != null){
-                Evalator eval = new Evalator(schema, tuple);
+                String table = ((Column)((BinaryExpression)condition).getLeftExpression()).getTable().getName();
+                Evalator eval = new Evalator(schema.get(table), tuple);
                 try{
                     if(!eval.eval(condition).toBool()){
+                        //System.err.println(eval.eval(condition));
                         tuple = null;
                     }
                 }

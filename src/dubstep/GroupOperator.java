@@ -12,7 +12,7 @@ import net.sf.jsqlparser.statement.select.*;
 public class GroupOperator implements Operator{
     
     Operator input;
-    HashMap<String, Integer> schema;
+    HashMap<String,HashMap<String,Integer>> schema;
     List<SelectItem> toProject;
     HashMap<String,Datum[]> groups;
     List<Column> condition;
@@ -21,7 +21,7 @@ public class GroupOperator implements Operator{
     Iterator it;
     
     //AGG / PROJECT
-    public GroupOperator(Operator input,HashMap<String, Integer> schema, List<SelectItem> toProject){
+    public GroupOperator(Operator input, HashMap<String,HashMap<String,Integer>> schema, List<SelectItem> toProject){
         this.input = input;
         this.schema = schema;
         this.toProject = toProject;
@@ -29,7 +29,7 @@ public class GroupOperator implements Operator{
         rand = new Random();
     }
     //GROUP BY
-    public GroupOperator(Operator input,HashMap<String, Integer> schema, List<SelectItem> toProject, List<Column> condition){
+    public GroupOperator(Operator input, HashMap<String,HashMap<String,Integer>> schema, List<SelectItem> toProject, List<Column> condition){
         this.input = input;
         this.schema = schema;
         this.toProject = toProject;
@@ -38,7 +38,7 @@ public class GroupOperator implements Operator{
         rand = new Random();
     }
     //HAVING
-    public GroupOperator(Operator input,HashMap<String, Integer> schema, List<SelectItem> toProject, List<Column> condition, Expression having){
+    public GroupOperator(Operator input, HashMap<String,HashMap<String,Integer>> schema, List<SelectItem> toProject, List<Column> condition, Expression having){
         this.input = input;
         this.schema = schema;
         this.toProject = toProject;
@@ -51,12 +51,13 @@ public class GroupOperator implements Operator{
         return hash1+"hash"+hash2;
     }
     public Datum[] getNext(){
+        String table = ((Column)((SelectExpressionItem)toProject.get(0)).getExpression()).getTable().getName();
         Datum[] tuple = null;
         do{
             tuple = input.getNext();
             if (tuple != null){
                 Datum[] project = new Datum[toProject.size()];
-                Evalator eval = new Evalator(schema, tuple);
+                Evalator eval = new Evalator(schema.get(table), tuple);
                 String hash = tuple[0].toString() + rand.nextInt((1000 - 0) + 1) + tuple[rand.nextInt((tuple.length - 0))].toString();
                 
                 if(condition != null){
@@ -76,36 +77,40 @@ public class GroupOperator implements Operator{
                     else{
                         Expression func = ((SelectExpressionItem)column).getExpression();
                         if(func instanceof Column){
-                            project[i] = tuple[schema.get(column.toString())];
+                            project[i] = tuple[schema.get(table).get(((Column)((SelectExpressionItem)toProject.get(i)).getExpression()).getColumnName())];
                         }
                         else if (func instanceof Function){
                             if(condition == null)
                                 hash = "";
-                            schema.put(func.toString(),schema.size());
+                            HashMap<String,Integer> cols = schema.get(table);
+                            cols.put(func.toString(),schema.size());
+                            //schema.put("groups",cols);
                             project[i] = new Datum.Int("0");
                             LongValue val = (LongValue)project[i].getData();
                             if(groups.containsKey(hash)){
                                 try{
                                 LongValue prevVal = (LongValue)(groups.get(hash))[i].getData();
-                                LongValue colVal = (LongValue)eval.eval(((Function)func).getParameters().getExpressions().get(0));
                                 if(((Function)func).getName().equals("COUNT"))
                                     val.setValue(prevVal.getValue() + 1 );
-                                if(((Function)func).getName().equals("AVG"))
-                                    val.setValue((prevVal.getValue()+colVal.getValue())/2);
-                                if(((Function)func).getName().equals("MAX")){
-                                    if(prevVal.getValue() <= colVal.getValue())
-                                        val.setValue(colVal.getValue());
-                                    else
-                                        val.setValue(prevVal.getValue());
-                                }
-                                if(((Function)func).getName().equals("MIN")){
-                                    if(prevVal.getValue() >= colVal.getValue())
-                                        val.setValue(colVal.getValue());
-                                    else
-                                        val.setValue(prevVal.getValue());
-                                }
-                                if(((Function)func).getName().equals("SUM"))
-                                    val.setValue(prevVal.getValue()+colVal.getValue());
+                                else{
+                                    LongValue colVal = (LongValue)eval.eval(((Function)func).getParameters().getExpressions().get(0));
+                                    if(((Function)func).getName().equals("AVG"))
+                                        val.setValue((prevVal.getValue()+colVal.getValue())/2);
+                                    if(((Function)func).getName().equals("MAX")){
+                                        if(prevVal.getValue() <= colVal.getValue())
+                                            val.setValue(colVal.getValue());
+                                        else
+                                            val.setValue(prevVal.getValue());
+                                    }
+                                    if(((Function)func).getName().equals("MIN")){
+                                        if(prevVal.getValue() >= colVal.getValue())
+                                            val.setValue(colVal.getValue());
+                                        else
+                                            val.setValue(prevVal.getValue());
+                                    }
+                                    if(((Function)func).getName().equals("SUM"))
+                                        val.setValue(prevVal.getValue()+colVal.getValue());
+                                    }
                                 }
                                 catch(SQLException e){
                                     e.printStackTrace();
@@ -113,18 +118,20 @@ public class GroupOperator implements Operator{
                             }
                             else{
                                 try{
-                                    LongValue initVal = (LongValue)eval.eval(((Function)func).getParameters().getExpressions().get(0));
                                     //LongValue initVal = (LongValue)(tuple[schema.get(((Function)func).getParameters().getExpressions().get(0).toString())].getData());
                                     if(((Function)func).getName().equals("COUNT"))
                                         val.setValue(1);
-                                    if(((Function)func).getName().equals("AVG"))
-                                        val.setValue(initVal.getValue());
-                                    if(((Function)func).getName().equals("MAX"))
-                                        val.setValue(initVal.getValue());
-                                    if(((Function)func).getName().equals("MIN"))
-                                        val.setValue(initVal.getValue());
-                                    if(((Function)func).getName().equals("SUM"))
-                                        val.setValue(initVal.getValue());
+                                    else{
+                                        LongValue initVal = (LongValue)eval.eval(((Function)func).getParameters().getExpressions().get(0));
+                                        if(((Function)func).getName().equals("AVG"))
+                                            val.setValue(initVal.getValue());
+                                        if(((Function)func).getName().equals("MAX"))
+                                            val.setValue(initVal.getValue());
+                                        if(((Function)func).getName().equals("MIN"))
+                                            val.setValue(initVal.getValue());
+                                        if(((Function)func).getName().equals("SUM"))
+                                            val.setValue(initVal.getValue());
+                                    }
                                 }
                                 catch(SQLException e){
                                     e.printStackTrace();
