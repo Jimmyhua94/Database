@@ -5,6 +5,8 @@ import java.sql.SQLException;
 
 import net.sf.jsqlparser.schema.Column;
 import net.sf.jsqlparser.expression.*;
+import net.sf.jsqlparser.expression.operators.conditional.*;
+import net.sf.jsqlparser.expression.operators.relational.EqualsTo;
 import net.sf.jsqlparser.schema.Table;
 
 import dubstep.solution.data.TupleEval;
@@ -20,6 +22,8 @@ public class GraceHashJoin extends Operator.Binary {
     HashMap<String,ArrayList<PrimitiveValue[]>> lhsMap;
     ArrayList<PrimitiveValue[]> joinTable;
     Iterator it;
+    ArrayList<Column> lhsConditions;
+    ArrayList<Column> rhsConditions;
 
   public GraceHashJoin(){ super(Operator.Type.JOIN); }
   public GraceHashJoin(Operator lhs, Operator rhs, Expression condition){ 
@@ -30,18 +34,40 @@ public class GraceHashJoin extends Operator.Binary {
     lhsMap = new HashMap<String,ArrayList<PrimitiveValue[]>>();
     joinTable = new ArrayList<PrimitiveValue[]>();
     
-    /* If the condition is flipped, flip it */
+    lhsConditions = new ArrayList<Column>();
+    rhsConditions = new ArrayList<Column>();
     
+    Expression tempExpr = condition;
+    Expression temp;
+    do{
+        if((temp = ((BinaryExpression)tempExpr).getRightExpression()) instanceof Column){
+            temp = flipper(tempExpr);
+            rhsConditions.add((Column)(((BinaryExpression)temp).getRightExpression()));
+            lhsConditions.add((Column)(((BinaryExpression)temp).getLeftExpression()));
+        }
+        else if((temp = ((BinaryExpression)tempExpr).getRightExpression()) instanceof EqualsTo){
+            temp = flipper(temp);
+            rhsConditions.add((Column)(((BinaryExpression)temp).getRightExpression()));
+            lhsConditions.add((Column)(((BinaryExpression)temp).getLeftExpression()));
+        }
+        tempExpr = ((BinaryExpression)tempExpr).getLeftExpression();
+    }while(!(tempExpr instanceof Column));
+  }
+  
+  private Expression flipper(Expression expr){
+    /* If the condition is flipped, flip it */
     Set<Column> lhsCols = new HashSet<Column>(lhs.getSchema());
     Set<Column> rhsCols = new HashSet<Column>();
-    rhsCols.add((Column)((BinaryExpression)condition).getLeftExpression());
+    
+    rhsCols.add((Column)((BinaryExpression)expr).getLeftExpression());
     
     if(!(SetUtils.intersect(rhsCols, lhsCols).size() > 0)){
-        Expression temp = ((BinaryExpression)condition).getLeftExpression();
-        ((BinaryExpression)condition).setLeftExpression(((BinaryExpression)condition).getRightExpression());
-        ((BinaryExpression)condition).setRightExpression(temp);
+        Expression temp = ((BinaryExpression)expr).getLeftExpression();
+        ((BinaryExpression)expr).setLeftExpression(((BinaryExpression)expr).getRightExpression());
+        ((BinaryExpression)expr).setRightExpression(temp);
         flip = true;
     }
+    return expr;
   }
   
   public String detailString(){
@@ -86,7 +112,10 @@ public class GraceHashJoin extends Operator.Binary {
         
         while((lhsValue = lhs.getNext())!=null){
             lhsEval.setTuple(lhsValue);
-            String key = lhsEval.eval((Column)((BinaryExpression)condition).getLeftExpression()).toRawString();
+            String key = "";
+            for(Column col: lhsConditions){
+                key += lhsEval.eval(col).toRawString();
+            }
             if(!lhsMap.containsKey(key)){
                 ArrayList<PrimitiveValue[]> bucket = new ArrayList<PrimitiveValue[]>();
                 bucket.add(lhsValue);
@@ -104,10 +133,13 @@ public class GraceHashJoin extends Operator.Binary {
         
         while((rhsValue = rhs.getNext()) != null){
             rhsEval.setTuple(rhsValue);
-            PrimitiveValue rhsCondition = rhsEval.eval((Column)((BinaryExpression)condition).getRightExpression());
+            String key = "";
+            for(Column col: rhsConditions){
+                key += rhsEval.eval(col).toRawString();
+            }
             
-            if(lhsMap.containsKey(rhsCondition.toRawString())){
-                ArrayList<PrimitiveValue[]> bucket = lhsMap.get(rhsCondition.toRawString());
+            if(lhsMap.containsKey(key)){
+                ArrayList<PrimitiveValue[]> bucket = lhsMap.get(key);
                 for(PrimitiveValue[] value: bucket){
                     PrimitiveValue[] tuple = new PrimitiveValue[value.length + rhsValue.length];
                     for(int i = 0; i < value.length; i++){
