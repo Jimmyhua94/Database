@@ -1,6 +1,0 @@
-CREATE TABLE R (A int, B int);
-CREATE TABLE S (A int, B int);
-
-SELECT RA.A, RA.B
-FROM S RA
-WHERE RA.A >= RA.B

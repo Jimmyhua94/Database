@@ -1,0 +1,6 @@
+#!/bin/bash
+
+ME=$(dirname $0)
+CLASSPATH=build/:$(echo $ME/lib/*.jar | tr ' ' ':')
+
+java -cp $CLASSPATH dubstep.Main --data ../Engine/data $*

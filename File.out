@@ -1,0 +1,53 @@
+=== QUERY ===
+SELECT * FROM orders AS O, customer AS C, nation AS N WHERE O.custkey = C.custkey AND C.acctbal < 100 AND C.nationkey = N.nationkey
+=== PLAN ===
+SELECT[O.custkey = C.custkey AND C.acctbal < 100 AND C.nationkey = N.nationkey] {
+  CROSS PRODUCT {
+    CROSS PRODUCT {
+      SCAN [ORDERS(orderkey, custkey, orderstatus, totalprice, orderdate, orderpriority, clerk, shippriority, comment)], 
+      SCAN [CUSTOMER(custkey, name, address, nationkey, phone, acctbal, mktsegment, comment)]
+    }, 
+    SCAN [NATION(nationkey, name, regionkey, comment)]
+  }
+}
+CLAUSE: C.nationkey = N.nationkey
+   COLUMNS:[C.nationkey, N.nationkey]
+  Keep it there!
+CLAUSE: O.custkey = C.custkey
+   COLUMNS:[O.custkey, C.custkey]
+  Push-down left
+CLAUSE: C.acctbal < 100
+   COLUMNS:[C.acctbal]
+  Push-down left
+CLAUSE: O.custkey = C.custkey
+   COLUMNS:[O.custkey, C.custkey]
+  Keep it there!
+CLAUSE: C.acctbal < 100
+   COLUMNS:[C.acctbal]
+  Push-down right
+CLAUSE: C.nationkey = N.nationkey
+   COLUMNS:[C.nationkey, N.nationkey]
+  GraceHashJoin
+CLAUSE: O.custkey = C.custkey
+   COLUMNS:[O.custkey, C.custkey]
+  GraceHashJoin
+=== OPTIMIZED PLAN ===
+GRACE HASH JOIN {
+  GRACE HASH JOIN {
+    SCAN [ORDERS(orderkey, custkey, orderstatus, totalprice, orderdate, orderpriority, clerk, shippriority, comment)], 
+    SELECT[C.acctbal < 100] {
+      SCAN [CUSTOMER(custkey, name, address, nationkey, phone, acctbal, mktsegment, comment)]
+    }
+  }, 
+  SCAN [NATION(nationkey, name, regionkey, comment)]
+}
+=== RESULTS ===
+131|11|'F'|96596.81|1994-06-08|'3-MEDIUM'|'Clerk#000000625'|0|'after the fluffily special foxes integrate s'|11|'Customer#000000011'|'PkWS 3HlXqwTuzrKg633BEi'|23|'33-464-151-3439'|-272.6|'BUILDING'|'ckages. requests sleep slyly. quickly even pinto beans promise above the slyly regular pinto beans. '|23|'UNITED KINGDOM'|3|'eans boost carefully special requests. accounts are. carefull'
+193|11|'F'|48053.18|1993-08-08|'1-URGENT'|'Clerk#000000025'|0|'the furiously final pin'|11|'Customer#000000011'|'PkWS 3HlXqwTuzrKg633BEi'|23|'33-464-151-3439'|-272.6|'BUILDING'|'ckages. requests sleep slyly. quickly even pinto beans promise above the slyly regular pinto beans. '|23|'UNITED KINGDOM'|3|'eans boost carefully special requests. accounts are. carefull'
+195|11|'F'|120053.52|1993-12-28|'3-MEDIUM'|'Clerk#000000216'|0|'old forges are furiously sheaves. slyly fi'|11|'Customer#000000011'|'PkWS 3HlXqwTuzrKg633BEi'|23|'33-464-151-3439'|-272.6|'BUILDING'|'ckages. requests sleep slyly. quickly even pinto beans promise above the slyly regular pinto beans. '|23|'UNITED KINGDOM'|3|'eans boost carefully special requests. accounts are. carefull'
+227|11|'O'|46076.46|1995-11-10|'5-LOW'|'Clerk#000000919'|0|' express instructions. slyly regul'|11|'Customer#000000011'|'PkWS 3HlXqwTuzrKg633BEi'|23|'33-464-151-3439'|-272.6|'BUILDING'|'ckages. requests sleep slyly. quickly even pinto beans promise above the slyly regular pinto beans. '|23|'UNITED KINGDOM'|3|'eans boost carefully special requests. accounts are. carefull'
+294|11|'F'|30059.47|1993-07-16|'3-MEDIUM'|'Clerk#000000499'|0|'kly according to the frays. final dolphins affix quickly '|11|'Customer#000000011'|'PkWS 3HlXqwTuzrKg633BEi'|23|'33-464-151-3439'|-272.6|'BUILDING'|'ckages. requests sleep slyly. quickly even pinto beans promise above the slyly regular pinto beans. '|23|'UNITED KINGDOM'|3|'eans boost carefully special requests. accounts are. carefull'
+486|11|'O'|185968.15|1996-03-11|'4-NOT SPECIFIED'|'Clerk#000000803'|0|'riously dolphins. fluffily ironic requ'|11|'Customer#000000011'|'PkWS 3HlXqwTuzrKg633BEi'|23|'33-464-151-3439'|-272.6|'BUILDING'|'ckages. requests sleep slyly. quickly even pinto beans promise above the slyly regular pinto beans. '|23|'UNITED KINGDOM'|3|'eans boost carefully special requests. accounts are. carefull'
+517|11|'O'|82197.79|1997-04-07|'5-LOW'|'Clerk#000000359'|0|'slyly pending deposits cajole quickly packages. furiou'|11|'Customer#000000011'|'PkWS 3HlXqwTuzrKg633BEi'|23|'33-464-151-3439'|-272.6|'BUILDING'|'ckages. requests sleep slyly. quickly even pinto beans promise above the slyly regular pinto beans. '|23|'UNITED KINGDOM'|3|'eans boost carefully special requests. accounts are. carefull'
+544|11|'F'|47627.89|1993-02-17|'2-HIGH'|'Clerk#000000145'|0|'the special, final accounts. dogged dolphins'|11|'Customer#000000011'|'PkWS 3HlXqwTuzrKg633BEi'|23|'33-464-151-3439'|-272.6|'BUILDING'|'ckages. requests sleep slyly. quickly even pinto beans promise above the slyly regular pinto beans. '|23|'UNITED KINGDOM'|3|'eans boost carefully special requests. accounts are. carefull'
+578|11|'O'|70392.02|1997-01-10|'5-LOW'|'Clerk#000000281'|0|'e blithely even packages. slyly pending platelets bes'|11|'Customer#000000011'|'PkWS 3HlXqwTuzrKg633BEi'|23|'33-464-151-3439'|-272.6|'BUILDING'|'ckages. requests sleep slyly. quickly even pinto beans promise above the slyly regular pinto beans. '|23|'UNITED KINGDOM'|3|'eans boost carefully special requests. accounts are. carefull'
