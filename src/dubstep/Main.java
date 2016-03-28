@@ -67,7 +67,7 @@ public class Main {
   public static void main(String[] argsArray)
     throws Exception
   {
-    System.setOut(new PrintStream(new FileOutputStream("File.out")));
+    // System.setOut(new PrintStream(new FileOutputStream("File.out")));
       
     if(projectStage == ProjectStage.Checkpoint0) {
       System.out.println(

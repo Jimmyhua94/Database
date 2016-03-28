@@ -16,30 +16,6 @@ SORT[revenue DESC, orders.orderdate ASC] {
     }
   }
 }
-CLAUSE: lineitem.shipdate > DATE('1995-03-15')
-   COLUMNS:[lineitem.shipdate]
-  Push-down right
-CLAUSE: orders.orderdate < DATE('1995-03-15')
-   COLUMNS:[orders.orderdate]
-  Push-down left
-CLAUSE: lineitem.orderkey = orders.orderkey
-   COLUMNS:[lineitem.orderkey, orders.orderkey]
-  Keep it there!
-CLAUSE: customer.mktsegment = 'BUILDING'
-   COLUMNS:[customer.mktsegment]
-  Push-down left
-CLAUSE: customer.custkey = orders.custkey
-   COLUMNS:[customer.custkey, orders.custkey]
-  Push-down left
-CLAUSE: customer.custkey = orders.custkey
-   COLUMNS:[customer.custkey, orders.custkey]
-  Keep it there!
-CLAUSE: orders.orderdate < DATE('1995-03-15')
-   COLUMNS:[orders.orderdate]
-  Push-down right
-CLAUSE: customer.mktsegment = 'BUILDING'
-   COLUMNS:[customer.mktsegment]
-  Push-down left
 === OPTIMIZED PLAN ===
 SORT[revenue DESC, orders.orderdate ASC] {
   PROJECT [orderkey: __lineitem::orderkey, revenue: ___INTERNAL_AGG_1, orderdate: __orders::orderdate, shippriority: __orders::shippriority] {
