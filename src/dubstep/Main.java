@@ -67,7 +67,7 @@ public class Main {
   public static void main(String[] argsArray)
     throws Exception
   {
-    // System.setOut(new PrintStream(new FileOutputStream("File.out")));
+    System.setOut(new PrintStream(new FileOutputStream("File.out")));
       
     if(projectStage == ProjectStage.Checkpoint0) {
       System.out.println(
@@ -165,7 +165,7 @@ public class Main {
             ArrayList<PlanRewrite> optimizations = new ArrayList<PlanRewrite>();
             // Add your optimizations here...
             optimizations.add(new SelectionPushdown());
-            optimizations.add(new JoinOptimization());
+            //optimizations.add(new JoinOptimization());
 
             plan = Optimizer.optimize(plan, db, optimizations);
           }

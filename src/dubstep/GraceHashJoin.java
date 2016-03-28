@@ -109,13 +109,12 @@ public class GraceHashJoin extends Operator.Binary {
             if(lhsMap.containsKey(rhsCondition.toRawString())){
                 ArrayList<PrimitiveValue[]> bucket = lhsMap.get(rhsCondition.toRawString());
                 for(PrimitiveValue[] value: bucket){
-                    PrimitiveValue[] tuple = new PrimitiveValue[lhs.getSchema().size() + rhs.getSchema().size()];
-                    for(int i = 0; i < lhs.getSchema().size(); i++){
+                    PrimitiveValue[] tuple = new PrimitiveValue[value.length + rhsValue.length];
+                    for(int i = 0; i < value.length; i++){
                         tuple[i] = value[i];
                     }
-                    List<Column> rhsSchema = rhs.getSchema();
-                    for(int i = 0; i < rhs.getSchema().size(); i++){
-                            tuple[i+lhs.getSchema().size()] = rhsValue[i];
+                    for(int i = 0; i < rhsValue.length; i++){
+                            tuple[i+value.length] = rhsValue[i];
                     }
                     joinTable.add(tuple);
                 }

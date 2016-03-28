@@ -41,7 +41,7 @@
             <arg value="-d"/>
             <arg value="--data"/>
             <arg value="data/TPCH_DATA/"/>
-            <arg value="data/TPCH_SQL/test.sql"/>
+            <arg value="data/TPCH_SQL/tpch3.sql"/>
         </java>
     </target>
   

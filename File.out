@@ -1,53 +1,69 @@
 === QUERY ===
-SELECT * FROM orders AS O, customer AS C, nation AS N WHERE O.custkey = C.custkey AND C.acctbal < 100 AND C.nationkey = N.nationkey
+SELECT lineitem.orderkey, sum(lineitem.extendedprice * 1 - lineitem.discount) AS revenue, orders.orderdate, orders.shippriority FROM customer, orders, lineitem WHERE customer.mktsegment = 'BUILDING' AND customer.custkey = orders.custkey AND lineitem.orderkey = orders.orderkey AND orders.orderdate < DATE('1995-03-15') AND lineitem.shipdate > DATE('1995-03-15') GROUP BY lineitem.orderkey, orders.orderdate, orders.shippriority ORDER BY revenue DESC, orders.orderdate
 === PLAN ===
-SELECT[O.custkey = C.custkey AND C.acctbal < 100 AND C.nationkey = N.nationkey] {
-  CROSS PRODUCT {
-    CROSS PRODUCT {
-      SCAN [ORDERS(orderkey, custkey, orderstatus, totalprice, orderdate, orderpriority, clerk, shippriority, comment)], 
-      SCAN [CUSTOMER(custkey, name, address, nationkey, phone, acctbal, mktsegment, comment)]
-    }, 
-    SCAN [NATION(nationkey, name, regionkey, comment)]
+SORT[revenue DESC, orders.orderdate ASC] {
+  PROJECT [orderkey: __lineitem::orderkey, revenue: ___INTERNAL_AGG_1, orderdate: __orders::orderdate, shippriority: __orders::shippriority] {
+    AGGREGATE [__lineitem::orderkey: lineitem.orderkey, __orders::orderdate: orders.orderdate, __orders::shippriority: orders.shippriority, ___INTERNAL_AGG_1: SUM(lineitem.extendedprice * 1 - lineitem.discount)] {
+      SELECT[customer.mktsegment = 'BUILDING' AND customer.custkey = orders.custkey AND lineitem.orderkey = orders.orderkey AND orders.orderdate < DATE('1995-03-15') AND lineitem.shipdate > DATE('1995-03-15')] {
+        CROSS PRODUCT {
+          CROSS PRODUCT {
+            SCAN [CUSTOMER(custkey, name, address, nationkey, phone, acctbal, mktsegment, comment)], 
+            SCAN [ORDERS(orderkey, custkey, orderstatus, totalprice, orderdate, orderpriority, clerk, shippriority, comment)]
+          }, 
+          SCAN [LINEITEM(orderkey, partkey, suppkey, linenumber, quantity, extendedprice, discount, tax, returnflag, linestatus, shipdate, commitdate, receiptdate, shipinstruct, shipmode, comment)]
+        }
+      }
+    }
   }
 }
-CLAUSE: C.nationkey = N.nationkey
-   COLUMNS:[C.nationkey, N.nationkey]
-  Keep it there!
-CLAUSE: O.custkey = C.custkey
-   COLUMNS:[O.custkey, C.custkey]
-  Push-down left
-CLAUSE: C.acctbal < 100
-   COLUMNS:[C.acctbal]
-  Push-down left
-CLAUSE: O.custkey = C.custkey
-   COLUMNS:[O.custkey, C.custkey]
-  Keep it there!
-CLAUSE: C.acctbal < 100
-   COLUMNS:[C.acctbal]
+CLAUSE: lineitem.shipdate > DATE('1995-03-15')
+   COLUMNS:[lineitem.shipdate]
   Push-down right
-CLAUSE: C.nationkey = N.nationkey
-   COLUMNS:[C.nationkey, N.nationkey]
-  GraceHashJoin
-CLAUSE: O.custkey = C.custkey
-   COLUMNS:[O.custkey, C.custkey]
-  GraceHashJoin
+CLAUSE: orders.orderdate < DATE('1995-03-15')
+   COLUMNS:[orders.orderdate]
+  Push-down left
+CLAUSE: lineitem.orderkey = orders.orderkey
+   COLUMNS:[lineitem.orderkey, orders.orderkey]
+  Keep it there!
+CLAUSE: customer.mktsegment = 'BUILDING'
+   COLUMNS:[customer.mktsegment]
+  Push-down left
+CLAUSE: customer.custkey = orders.custkey
+   COLUMNS:[customer.custkey, orders.custkey]
+  Push-down left
+CLAUSE: customer.custkey = orders.custkey
+   COLUMNS:[customer.custkey, orders.custkey]
+  Keep it there!
+CLAUSE: orders.orderdate < DATE('1995-03-15')
+   COLUMNS:[orders.orderdate]
+  Push-down right
+CLAUSE: customer.mktsegment = 'BUILDING'
+   COLUMNS:[customer.mktsegment]
+  Push-down left
 === OPTIMIZED PLAN ===
-GRACE HASH JOIN {
-  GRACE HASH JOIN {
-    SCAN [ORDERS(orderkey, custkey, orderstatus, totalprice, orderdate, orderpriority, clerk, shippriority, comment)], 
-    SELECT[C.acctbal < 100] {
-      SCAN [CUSTOMER(custkey, name, address, nationkey, phone, acctbal, mktsegment, comment)]
+SORT[revenue DESC, orders.orderdate ASC] {
+  PROJECT [orderkey: __lineitem::orderkey, revenue: ___INTERNAL_AGG_1, orderdate: __orders::orderdate, shippriority: __orders::shippriority] {
+    AGGREGATE [__lineitem::orderkey: lineitem.orderkey, __orders::orderdate: orders.orderdate, __orders::shippriority: orders.shippriority, ___INTERNAL_AGG_1: SUM(lineitem.extendedprice * 1 - lineitem.discount)] {
+      SELECT[lineitem.orderkey = orders.orderkey] {
+        CROSS PRODUCT {
+          SELECT[customer.custkey = orders.custkey] {
+            CROSS PRODUCT {
+              SELECT[customer.mktsegment = 'BUILDING'] {
+                SCAN [CUSTOMER(custkey, name, address, nationkey, phone, acctbal, mktsegment, comment)]
+              }, 
+              SELECT[orders.orderdate < DATE('1995-03-15')] {
+                SCAN [ORDERS(orderkey, custkey, orderstatus, totalprice, orderdate, orderpriority, clerk, shippriority, comment)]
+              }
+            }
+          }, 
+          SELECT[lineitem.shipdate > DATE('1995-03-15')] {
+            SCAN [LINEITEM(orderkey, partkey, suppkey, linenumber, quantity, extendedprice, discount, tax, returnflag, linestatus, shipdate, commitdate, receiptdate, shipinstruct, shipmode, comment)]
+          }
+        }
+      }
     }
-  }, 
-  SCAN [NATION(nationkey, name, regionkey, comment)]
+  }
 }
 === RESULTS ===
-131|11|'F'|96596.81|1994-06-08|'3-MEDIUM'|'Clerk#000000625'|0|'after the fluffily special foxes integrate s'|11|'Customer#000000011'|'PkWS 3HlXqwTuzrKg633BEi'|23|'33-464-151-3439'|-272.6|'BUILDING'|'ckages. requests sleep slyly. quickly even pinto beans promise above the slyly regular pinto beans. '|23|'UNITED KINGDOM'|3|'eans boost carefully special requests. accounts are. carefull'
-193|11|'F'|48053.18|1993-08-08|'1-URGENT'|'Clerk#000000025'|0|'the furiously final pin'|11|'Customer#000000011'|'PkWS 3HlXqwTuzrKg633BEi'|23|'33-464-151-3439'|-272.6|'BUILDING'|'ckages. requests sleep slyly. quickly even pinto beans promise above the slyly regular pinto beans. '|23|'UNITED KINGDOM'|3|'eans boost carefully special requests. accounts are. carefull'
-195|11|'F'|120053.52|1993-12-28|'3-MEDIUM'|'Clerk#000000216'|0|'old forges are furiously sheaves. slyly fi'|11|'Customer#000000011'|'PkWS 3HlXqwTuzrKg633BEi'|23|'33-464-151-3439'|-272.6|'BUILDING'|'ckages. requests sleep slyly. quickly even pinto beans promise above the slyly regular pinto beans. '|23|'UNITED KINGDOM'|3|'eans boost carefully special requests. accounts are. carefull'
-227|11|'O'|46076.46|1995-11-10|'5-LOW'|'Clerk#000000919'|0|' express instructions. slyly regul'|11|'Customer#000000011'|'PkWS 3HlXqwTuzrKg633BEi'|23|'33-464-151-3439'|-272.6|'BUILDING'|'ckages. requests sleep slyly. quickly even pinto beans promise above the slyly regular pinto beans. '|23|'UNITED KINGDOM'|3|'eans boost carefully special requests. accounts are. carefull'
-294|11|'F'|30059.47|1993-07-16|'3-MEDIUM'|'Clerk#000000499'|0|'kly according to the frays. final dolphins affix quickly '|11|'Customer#000000011'|'PkWS 3HlXqwTuzrKg633BEi'|23|'33-464-151-3439'|-272.6|'BUILDING'|'ckages. requests sleep slyly. quickly even pinto beans promise above the slyly regular pinto beans. '|23|'UNITED KINGDOM'|3|'eans boost carefully special requests. accounts are. carefull'
-486|11|'O'|185968.15|1996-03-11|'4-NOT SPECIFIED'|'Clerk#000000803'|0|'riously dolphins. fluffily ironic requ'|11|'Customer#000000011'|'PkWS 3HlXqwTuzrKg633BEi'|23|'33-464-151-3439'|-272.6|'BUILDING'|'ckages. requests sleep slyly. quickly even pinto beans promise above the slyly regular pinto beans. '|23|'UNITED KINGDOM'|3|'eans boost carefully special requests. accounts are. carefull'
-517|11|'O'|82197.79|1997-04-07|'5-LOW'|'Clerk#000000359'|0|'slyly pending deposits cajole quickly packages. furiou'|11|'Customer#000000011'|'PkWS 3HlXqwTuzrKg633BEi'|23|'33-464-151-3439'|-272.6|'BUILDING'|'ckages. requests sleep slyly. quickly even pinto beans promise above the slyly regular pinto beans. '|23|'UNITED KINGDOM'|3|'eans boost carefully special requests. accounts are. carefull'
-544|11|'F'|47627.89|1993-02-17|'2-HIGH'|'Clerk#000000145'|0|'the special, final accounts. dogged dolphins'|11|'Customer#000000011'|'PkWS 3HlXqwTuzrKg633BEi'|23|'33-464-151-3439'|-272.6|'BUILDING'|'ckages. requests sleep slyly. quickly even pinto beans promise above the slyly regular pinto beans. '|23|'UNITED KINGDOM'|3|'eans boost carefully special requests. accounts are. carefull'
-578|11|'O'|70392.02|1997-01-10|'5-LOW'|'Clerk#000000281'|0|'e blithely even packages. slyly pending platelets bes'|11|'Customer#000000011'|'PkWS 3HlXqwTuzrKg633BEi'|23|'33-464-151-3439'|-272.6|'BUILDING'|'ckages. requests sleep slyly. quickly even pinto beans promise above the slyly regular pinto beans. '|23|'UNITED KINGDOM'|3|'eans boost carefully special requests. accounts are. carefull'
+450|147876.01859999998|1995-03-05|0
+577|34178.5628|1994-12-19|0
