@@ -165,7 +165,7 @@ public class Main {
             ArrayList<PlanRewrite> optimizations = new ArrayList<PlanRewrite>();
             // Add your optimizations here...
             optimizations.add(new SelectionPushdown());
-            //optimizations.add(new JoinOptimization());
+            optimizations.add(new JoinOptimization());
 
             plan = Optimizer.optimize(plan, db, optimizations);
           }
