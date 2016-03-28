@@ -38,9 +38,9 @@ public class SelectionPushdown extends PlanRewrite {
 				Expression topCondition = null;
 
 				for(Expression clause : select.conjunctiveClauses()){
-					System.out.println("CLAUSE: "+clause);
+					//System.out.println("CLAUSE: "+clause);
 					Set<Column> clauseCols = FindExpressionSchema.find(clause);	
-					System.out.println("   COLUMNS:"+clauseCols);
+					//System.out.println("   COLUMNS:"+clauseCols);
 					// System.out.println("   Left:"+lhsCols);
 					// System.out.println("   Right:"+rhsCols);
                     
@@ -48,14 +48,14 @@ public class SelectionPushdown extends PlanRewrite {
 					if(SetUtils.intersect(clauseCols, lhsCols).size() > 0){
 						if(SetUtils.intersect(clauseCols, rhsCols).size() > 0){
 							topCondition = makeAnd(topCondition, clause);
-							System.out.println("  Keep it there!");
+							//System.out.println("  Keep it there!");
 						} else {
 							lhsCondition = makeAnd(lhsCondition, clause);
-							System.out.println("  Push-down left");							
+							//System.out.println("  Push-down left");							
 						}
 					} else {
 						rhsCondition = makeAnd(rhsCondition, clause);
-						System.out.println("  Push-down right");							
+						//System.out.println("  Push-down right");							
 					}
 
 				}
