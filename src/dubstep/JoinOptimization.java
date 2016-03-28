@@ -26,9 +26,9 @@ public class JoinOptimization extends PlanRewrite {
 				Set<Column> rhsCols = new HashSet<Column>(rhs.getSchema());
                 
                 for(Expression clause : select.conjunctiveClauses()){
-					System.out.println("CLAUSE: "+clause);
+					//System.out.println("CLAUSE: "+clause);
 					Set<Column> clauseCols = FindExpressionSchema.find(clause);	
-					System.out.println("   COLUMNS:"+clauseCols);
+					//System.out.println("   COLUMNS:"+clauseCols);
                     // System.out.println("   Left:"+lhsCols);
 					// System.out.println("   Right:"+rhsCols);
                     
@@ -36,7 +36,7 @@ public class JoinOptimization extends PlanRewrite {
 						if(SetUtils.intersect(clauseCols, rhsCols).size() > 0){
                             Expression condition = select.getCondition();
                             GraceHashJoin join = new GraceHashJoin(lhs,rhs,condition);
-                            System.out.println("  GraceHashJoin");
+                            //System.out.println("  GraceHashJoin");
                             return join;
                         }
                     }
