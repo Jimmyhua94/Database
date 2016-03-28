@@ -140,9 +140,13 @@ public class Main {
       CCJSqlParser parser = new CCJSqlParser(new FileReader(f));
       Statement s;
       
+      while((s = parser.Statement()) != null){
+        System.out.println(s);
+      }
+      parser = new CCJSqlParser(new FileReader(f));
+      
       // CCJSqlParser returns null once it hits EOF.
       while((s = parser.Statement()) != null){
-        System.err.println(s);
         // Figure out what kind of statement we've just encountered
 
         if(s instanceof CreateTable){
