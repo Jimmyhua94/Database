@@ -162,14 +162,13 @@ public class GraceHashJoin extends Operator.Binary {
         it = joinTable.iterator();
     if(it.hasNext()){
         PrimitiveValue[] tup = (PrimitiveValue[])it.next();
-        it.remove();
         return tup;
     }
     return null;
   }
   
     String hashFunction(String hash1,String hash2){
-        return hash1+"hash"+hash2;
+        return hash1+","+hash2;
     }
 
 }
