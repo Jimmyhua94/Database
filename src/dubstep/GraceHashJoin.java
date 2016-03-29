@@ -114,7 +114,7 @@ public class GraceHashJoin extends Operator.Binary {
             lhsEval.setTuple(lhsValue);
             String key = "";
             for(Column col: lhsConditions){
-                key += lhsEval.eval(col).toRawString();
+                key = hashFunction(key,lhsEval.eval(col).toRawString());
             }
             if(!lhsMap.containsKey(key)){
                 ArrayList<PrimitiveValue[]> bucket = new ArrayList<PrimitiveValue[]>();
@@ -135,7 +135,7 @@ public class GraceHashJoin extends Operator.Binary {
             rhsEval.setTuple(rhsValue);
             String key = "";
             for(Column col: rhsConditions){
-                key += rhsEval.eval(col).toRawString();
+                key = hashFunction(key,rhsEval.eval(col).toRawString());
             }
             
             if(lhsMap.containsKey(key)){
@@ -167,5 +167,9 @@ public class GraceHashJoin extends Operator.Binary {
     }
     return null;
   }
+  
+    String hashFunction(String hash1,String hash2){
+        return hash1+"hash"+hash2;
+    }
 
 }
