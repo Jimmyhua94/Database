@@ -18,7 +18,6 @@ public class GraceHashJoin extends Operator.Binary {
     
     Expression condition;
     boolean firstRead = true;
-    boolean flip = false;
     HashMap<String,ArrayList<PrimitiveValue[]>> lhsMap;
     ArrayList<PrimitiveValue[]> joinTable;
     Iterator it;
@@ -36,6 +35,8 @@ public class GraceHashJoin extends Operator.Binary {
     
     lhsConditions = new ArrayList<Column>();
     rhsConditions = new ArrayList<Column>();
+    
+    /* Split left and right table columns */
     
     Expression tempExpr = condition;
     Expression temp;
@@ -65,7 +66,6 @@ public class GraceHashJoin extends Operator.Binary {
         Expression temp = ((BinaryExpression)expr).getLeftExpression();
         ((BinaryExpression)expr).setLeftExpression(((BinaryExpression)expr).getRightExpression());
         ((BinaryExpression)expr).setRightExpression(temp);
-        flip = true;
     }
     return expr;
   }
