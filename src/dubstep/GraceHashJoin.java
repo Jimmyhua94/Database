@@ -18,7 +18,7 @@ public class GraceHashJoin extends Operator.Binary {
     
     Expression condition;
     boolean firstRead = true;
-    HashMap<Integer,ArrayList<PrimitiveValue[]>> lhsMap;
+    HashMap<String,ArrayList<PrimitiveValue[]>> lhsMap;
     ArrayList<PrimitiveValue[]> joinTable;
     Iterator it;
     ArrayList<Column> lhsConditions;
@@ -30,7 +30,7 @@ public class GraceHashJoin extends Operator.Binary {
     this.lhs = lhs;
     this.rhs = rhs;
     this.condition = condition;
-    lhsMap = new HashMap<Integer,ArrayList<PrimitiveValue[]>>();
+    lhsMap = new HashMap<String,ArrayList<PrimitiveValue[]>>();
     joinTable = new ArrayList<PrimitiveValue[]>();
     
     lhsConditions = new ArrayList<Column>();
@@ -112,7 +112,7 @@ public class GraceHashJoin extends Operator.Binary {
         
         while((lhsValue = lhs.getNext())!=null){
             lhsEval.setTuple(lhsValue);
-            int key = 0;
+            String key = "";
             for(Column col: lhsConditions){
                 key = hashFunction(key,lhsEval.eval(col).hashCode());
             }
@@ -133,7 +133,7 @@ public class GraceHashJoin extends Operator.Binary {
         
         while((rhsValue = rhs.getNext()) != null){
             rhsEval.setTuple(rhsValue);
-            int key = 0;
+            String key = "";
             for(Column col: rhsConditions){
                 key = hashFunction(key,rhsEval.eval(col).hashCode());
             }
@@ -167,8 +167,8 @@ public class GraceHashJoin extends Operator.Binary {
     return null;
   }
   
-    int hashFunction(int hash1,int hash2){
-        return hash1+hash2;
+    String hashFunction(String hash1,int hash2){
+        return hash1+","+hash2;
     }
 
 }
