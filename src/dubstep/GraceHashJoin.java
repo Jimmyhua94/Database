@@ -1,24 +1,27 @@
 package dubstep;
 
-import java.util.*;
 import java.sql.SQLException;
-
-import net.sf.jsqlparser.schema.Column;
-import net.sf.jsqlparser.expression.*;
-import net.sf.jsqlparser.expression.operators.conditional.*;
-import net.sf.jsqlparser.expression.operators.relational.EqualsTo;
-import net.sf.jsqlparser.schema.Table;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 
 import dubstep.solution.data.TupleEval;
 import dubstep.solution.plan.Operator;
-import dubstep.solution.Schema;
-import dubstep.solution.util.*;
+import dubstep.solution.util.SetUtils;
+import net.sf.jsqlparser.expression.BinaryExpression;
+import net.sf.jsqlparser.expression.Expression;
+import net.sf.jsqlparser.expression.PrimitiveValue;
+import net.sf.jsqlparser.expression.operators.relational.EqualsTo;
+import net.sf.jsqlparser.schema.Column;
 
 public class GraceHashJoin extends Operator.Binary {
     
     Expression condition;
     boolean firstRead = true;
-    HashMap<String,ArrayList<PrimitiveValue[]>> lhsMap;
+    HashMap<Integer, ArrayList<PrimitiveValue[]>> lhsMap;
     ArrayList<PrimitiveValue[]> joinTable;
     Iterator it;
     ArrayList<Column> lhsConditions;
@@ -30,7 +33,7 @@ public class GraceHashJoin extends Operator.Binary {
     this.lhs = lhs;
     this.rhs = rhs;
     this.condition = condition;
-    lhsMap = new HashMap<String,ArrayList<PrimitiveValue[]>>();
+    lhsMap = new HashMap<Integer,ArrayList<PrimitiveValue[]>>();
     joinTable = new ArrayList<PrimitiveValue[]>();
     
     lhsConditions = new ArrayList<Column>();
@@ -112,7 +115,7 @@ public class GraceHashJoin extends Operator.Binary {
         
         while((lhsValue = lhs.getNext())!=null){
             lhsEval.setTuple(lhsValue);
-            String key = "";
+            int key = lhsValue.hashCode();
             for(Column col: lhsConditions){
                 key = hashFunction(key,lhsEval.eval(col).hashCode());
             }
@@ -133,7 +136,7 @@ public class GraceHashJoin extends Operator.Binary {
         
         while((rhsValue = rhs.getNext()) != null){
             rhsEval.setTuple(rhsValue);
-            String key = "";
+            int key = rhsValue.hashCode();
             for(Column col: rhsConditions){
                 key = hashFunction(key,rhsEval.eval(col).hashCode());
             }
@@ -167,8 +170,8 @@ public class GraceHashJoin extends Operator.Binary {
     return null;
   }
   
-    String hashFunction(String hash1,int hash2){
-        return hash1+","+hash2;
+    int hashFunction(int hash1,int hash2){
+        return hash1+hash2;
     }
 
 }
