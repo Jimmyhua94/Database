@@ -38,7 +38,7 @@ public class GraceHashJoin extends Operator.Binary {
     
     /* Split left and right table columns */
     
-    //long startTime = System.currentTimeMillis();
+    long startTime = System.currentTimeMillis();
     
     Expression tempExpr = condition;
     Expression temp;
@@ -56,12 +56,12 @@ public class GraceHashJoin extends Operator.Binary {
         tempExpr = ((BinaryExpression)tempExpr).getLeftExpression();
     }while(!(tempExpr instanceof Column));
     
-    //long endTime = System.currentTimeMillis();
-    //long totalTime = endTime - startTime;
-    //if(totalTime != 0){
-    //    totalTime/=1000;
-    //}
-    //System.err.println("Column Split: " + totalTime + "-----" + condition);
+    long endTime = System.currentTimeMillis();
+    long totalTime = endTime - startTime;
+    if(totalTime != 0){
+        totalTime/=1000;
+    }
+    System.err.println("Column Split: " + totalTime + "-----" + condition);
   }
   
   private Expression flipper(Expression expr){
@@ -114,7 +114,7 @@ public class GraceHashJoin extends Operator.Binary {
     /* Do the Grace Hash Join */
     
     if(firstRead == true){
-        //long startTime = System.currentTimeMillis();
+        long startTime = System.currentTimeMillis();
         
         PrimitiveValue[] lhsValue;
         TupleEval lhsEval = new TupleEval(lhs.getSchema());
@@ -165,13 +165,14 @@ public class GraceHashJoin extends Operator.Binary {
             }
         }
         
-        // long endTime = System.currentTimeMillis();
-        // long totalTime = endTime - startTime;
-        // if(totalTime != 0){
-            // totalTime/=1000;
-        // }
-        // System.err.println("Column Split: " + totalTime + "-----" + condition);
+        long endTime = System.currentTimeMillis();
+        long totalTime = endTime - startTime;
+        if(totalTime != 0){
+            totalTime/=1000;
+        }
+        System.err.println("Column Split: " + totalTime + "-----" + condition);
         
+        System.err.println(joinTable.size());
         firstRead=false;
     }
     
@@ -187,7 +188,7 @@ public class GraceHashJoin extends Operator.Binary {
   }
   
     int hashFunction(int hash1,int hash2){
-        return hash1+hash2*31;
+        return (hash1*456)+hash2;
     }
 
 }
