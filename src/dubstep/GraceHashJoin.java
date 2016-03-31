@@ -18,7 +18,7 @@ public class GraceHashJoin extends Operator.Binary {
     
     Expression condition;
     boolean firstRead = true;
-    HashMap<String,ArrayList<PrimitiveValue[]>> lhsMap;
+    HashMap<Integer,ArrayList<PrimitiveValue[]>> lhsMap;
     ArrayList<PrimitiveValue[]> joinTable;
     Iterator it;
     ArrayList<Column> lhsConditions;
@@ -30,13 +30,15 @@ public class GraceHashJoin extends Operator.Binary {
     this.lhs = lhs;
     this.rhs = rhs;
     this.condition = condition;
-    lhsMap = new HashMap<String,ArrayList<PrimitiveValue[]>>();
+    lhsMap = new HashMap<Integer,ArrayList<PrimitiveValue[]>>();
     joinTable = new ArrayList<PrimitiveValue[]>();
     
     lhsConditions = new ArrayList<Column>();
     rhsConditions = new ArrayList<Column>();
     
     /* Split left and right table columns */
+    
+    //long startTime = System.currentTimeMillis();
     
     Expression tempExpr = condition;
     Expression temp;
@@ -53,6 +55,13 @@ public class GraceHashJoin extends Operator.Binary {
         }
         tempExpr = ((BinaryExpression)tempExpr).getLeftExpression();
     }while(!(tempExpr instanceof Column));
+    
+    //long endTime = System.currentTimeMillis();
+    //long totalTime = endTime - startTime;
+    //if(totalTime != 0){
+    //    totalTime/=1000;
+    //}
+    //System.err.println("Column Split: " + totalTime + "-----" + condition);
   }
   
   private Expression flipper(Expression expr){
@@ -105,6 +114,8 @@ public class GraceHashJoin extends Operator.Binary {
     /* Do the Grace Hash Join */
     
     if(firstRead == true){
+        //long startTime = System.currentTimeMillis();
+        
         PrimitiveValue[] lhsValue;
         TupleEval lhsEval = new TupleEval(lhs.getSchema());
         
@@ -112,10 +123,11 @@ public class GraceHashJoin extends Operator.Binary {
         
         while((lhsValue = lhs.getNext())!=null){
             lhsEval.setTuple(lhsValue);
-            String key = "";
+            int key = 0;
             for(Column col: lhsConditions){
                 key = hashFunction(key,lhsEval.eval(col).hashCode());
             }
+            //System.err.println(key + "LHS");
             if(!lhsMap.containsKey(key)){
                 ArrayList<PrimitiveValue[]> bucket = new ArrayList<PrimitiveValue[]>();
                 bucket.add(lhsValue);
@@ -133,11 +145,11 @@ public class GraceHashJoin extends Operator.Binary {
         
         while((rhsValue = rhs.getNext()) != null){
             rhsEval.setTuple(rhsValue);
-            String key = "";
+            int key = 0;
             for(Column col: rhsConditions){
                 key = hashFunction(key,rhsEval.eval(col).hashCode());
             }
-            
+            //System.err.println(key + "RHS");
             if(lhsMap.containsKey(key)){
                 ArrayList<PrimitiveValue[]> bucket = lhsMap.get(key);
                 for(PrimitiveValue[] value: bucket){
@@ -153,6 +165,13 @@ public class GraceHashJoin extends Operator.Binary {
             }
         }
         
+        // long endTime = System.currentTimeMillis();
+        // long totalTime = endTime - startTime;
+        // if(totalTime != 0){
+            // totalTime/=1000;
+        // }
+        // System.err.println("Column Split: " + totalTime + "-----" + condition);
+        
         firstRead=false;
     }
     
@@ -167,8 +186,8 @@ public class GraceHashJoin extends Operator.Binary {
     return null;
   }
   
-    String hashFunction(String hash1,int hash2){
-        return hash1+","+hash2;
+    int hashFunction(int hash1,int hash2){
+        return hash1+hash2*31;
     }
 
 }
